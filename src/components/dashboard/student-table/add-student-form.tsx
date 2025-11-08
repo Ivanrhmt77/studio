@@ -13,15 +13,18 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { subjects } from "@/lib/dummy-data";
+import { subjects, classNames } from "@/lib/dummy-data";
 import type { Student, Grades } from "@/lib/types";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type AddStudentFormProps = {
   onFormSubmit: (data: Omit<Student, 'id' | 'averageGrade'>) => void;
+  selectedClass: string;
 };
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+  className: z.string(),
   ...subjects.reduce((acc, subject) => {
     acc[subject.toLowerCase()] = z.coerce.number().min(0, "Grade must be at least 0").max(100, "Grade must be at most 100");
     return acc;
@@ -29,11 +32,12 @@ const formSchema = z.object({
 });
 
 
-export default function AddStudentForm({ onFormSubmit }: AddStudentFormProps) {
+export default function AddStudentForm({ onFormSubmit, selectedClass }: AddStudentFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
+      className: selectedClass === 'All Classes' ? 'Class A' : selectedClass,
       ...subjects.reduce((acc, subject) => {
         acc[subject.toLowerCase()] = 0;
         return acc;
@@ -42,14 +46,14 @@ export default function AddStudentForm({ onFormSubmit }: AddStudentFormProps) {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    const { name, ...gradesData } = values;
+    const { name, className, ...gradesData } = values;
     
     const grades: Grades = subjects.reduce((acc, subject) => {
         acc[subject] = gradesData[subject.toLowerCase()];
         return acc;
     }, {} as Grades);
 
-    onFormSubmit({ name, grades });
+    onFormSubmit({ name, className, grades });
     form.reset();
   }
 
@@ -65,6 +69,28 @@ export default function AddStudentForm({ onFormSubmit }: AddStudentFormProps) {
               <FormControl>
                 <Input placeholder="e.g. Jane Doe" {...field} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="className"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Class</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a class" />
+                        </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                        {classNames.filter(c => c !== 'All Classes').map(c => (
+                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
               <FormMessage />
             </FormItem>
           )}

@@ -34,13 +34,16 @@ import type { Student } from "@/lib/types";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  setData: React.Dispatch<React.SetStateAction<TData[]>>;
+  selectedClass: string;
 }
 
 export function DataTable<TData extends Student, TValue>({
   columns,
-  data: initialData,
+  data,
+  setData,
+  selectedClass
 }: DataTableProps<TData, TValue>) {
-  const [data, setData] = React.useState<TData[]>(initialData);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [isFormOpen, setIsFormOpen] = React.useState(false);
 
@@ -67,7 +70,16 @@ export function DataTable<TData extends Student, TValue>({
         ...newStudentData,
         averageGrade,
     } as TData;
-    setData(prevData => [newStudent, ...prevData]);
+
+    setData(prevData => {
+      // This is a simplified logic, in a real app you'd likely post to a server
+      // and refetch the list of all students.
+      const allStudents = JSON.parse(localStorage.getItem('allStudents') || '[]');
+      const updatedAllStudents = [newStudent, ...allStudents];
+      localStorage.setItem('allStudents', JSON.stringify(updatedAllStudents));
+      return [newStudent, ...prevData];
+    });
+
     setIsFormOpen(false);
   };
 
@@ -88,7 +100,7 @@ export function DataTable<TData extends Student, TValue>({
                             Enter the student's name and their grades for each subject.
                         </DialogDescription>
                     </DialogHeader>
-                    <AddStudentForm onFormSubmit={addStudent} />
+                    <AddStudentForm onFormSubmit={addStudent} selectedClass={selectedClass} />
                 </DialogContent>
             </Dialog>
         </div>

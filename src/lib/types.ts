@@ -5,6 +5,7 @@ export interface Grades {
 export interface Student {
   id: number;
   name: string;
+  className: string;
   grades: Grades;
   averageGrade?: number;
 }
